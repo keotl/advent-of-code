@@ -1,4 +1,5 @@
 import day1._
+import day2._
 import java.nio.charset.StandardCharsets
 import java.nio.file.Files
 import java.nio.file.Path
@@ -8,6 +9,8 @@ import java.nio.file.Path
   val answer = exercise match {
     case "1a" => day1(input)
     case "1b" => day1b(input)
+    case "2a" => day2a(input)
+    case "2b" => day2b(input)
     case _ => println("Unsupported")
   }
 
