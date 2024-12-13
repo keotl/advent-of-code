@@ -1,8 +1,7 @@
-## sbt project compiled with Scala 3
+## Advent of Code 2024
+```bash
+sbt "run <day><a|b> inputs/<input-file>"
 
-### Usage
-
-This is a normal sbt project. You can compile code with `sbt compile`, run it with `sbt run`, and `sbt console` will start a Scala 3 REPL.
-
-For more information on the sbt-dotty plugin, see the
-[scala3-example-project](https://github.com/scala/scala3-example-project/blob/main/README.md).
+# e.g.
+sbt "run 1a inputs/1.txt"
+```
