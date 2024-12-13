@@ -76,7 +76,8 @@ private def and[T](predicates: (T => Boolean)*): (T) => Boolean =
 private def withOneRemoved(
     predicate: List[Int] => Boolean
 ): (levels: List[Int]) => Boolean = {
-  // This runs on O(n²). It should be possible to use a greedy
+  // This runs on O(n²) by generating all valid subsequences with one
+  // (or 0) items removed. It should be possible to use a greedy
   // algorithm to improve to O(n) runtime.
   // 1. Iterate through levels, keeping track of whether the "error
   // correcting allowance" has been spent or not.
@@ -87,7 +88,12 @@ private def withOneRemoved(
   // 3. We will need to iterate through levels twice, since the
   // monotonic criterion can only be checked greedily if we *know* the
   // expected direction.
-
+  //
+  // The greedy approach can only work if all criteria can be checked
+  // greedily. Therefore the O(n²) approach gives us the flexibility
+  // to add other types of criteria, such as "all numbers have to add
+  // up to an even number". The choice would have to be a tradeoff
+  // between input size and criterion-design constraints.
   def result(levels: List[Int]): Boolean = {
     generateValidSequences(levels, 1)
       .find(predicate)
@@ -109,7 +115,8 @@ private def generateValidSequences(
     case Nil      => Nil
     case h :: Nil => List(List(h), Nil)
     case h :: tail => {
-      // TODO - This would have to be made tail-recursive  - keotl 2024-12-13
+      // TODO - This would have to be made tail-recursive to not
+      // exceed stack depth - keotl 2024-12-13
 
       // either remove h
       generateValidSequences(tail, 0) ++
@@ -118,12 +125,4 @@ private def generateValidSequences(
 
     }
   }
-
-  // (allowedRemovals, values) match {
-  //   case (0, _) => List(values)
-  //   case (remainingRemovals, )
-  //   // case Nil => Nil
-  //   // case h => Nil
-  //   // case h::tail =>
-  // }
 }
