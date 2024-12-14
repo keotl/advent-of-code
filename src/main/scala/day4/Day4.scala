@@ -3,43 +3,66 @@ package day4
 import scala.util.matching.Regex
 
 def day4a(input: String): Int = {
-  val rowLength = input.split("\n").head.length()
-  val searchText = input.replace("\n", "")
-  buildRegexPatterns("XMAS", rowLength)
-    .map(_.findAllMatchIn(searchText).length)
-    .sum()
+  val rowLength = input.split("\n").head.length() + 1
+
+  val patterns = buildSearchPatterns("XMAS", rowLength) ++ buildSearchPatterns(
+    "SAMX",
+    rowLength
+  )
+  input.zipWithIndex
+    .map((_, startOffset) => {
+      patterns.filter(_(startOffset)(input)).length
+    })
+    .sum
 }
 
-def buildRegexPatterns(searchPattern: String, rowLength: Int): Seq[Regex] = {
+def buildSearchPatterns(searchPattern: String, rowLength: Int) = {
   Seq(
-    // Forward
-    searchPattern.r, // Horizontal
-    buildPattern(searchPattern, rowLength - 2).r, // Diagonal left
-    buildPattern(searchPattern, rowLength).r, // Diagonal right
-    buildPattern(searchPattern, rowLength - 1).r, // Vertical
-
-    // Backwards
-    searchPattern.reverse.r, // Horizontal,
-    buildPattern(searchPattern.reverse, rowLength - 2).r, // diagonal left
-    buildPattern(searchPattern.reverse, rowLength).r, // diagonal right
-    buildPattern(searchPattern.reverse, rowLength - 1).r // vertical
+    findWithSpacing(searchPattern, 1), // Horizontal
+    findWithSpacing(searchPattern, rowLength - 1), // Diagonal left
+    findWithSpacing(searchPattern, rowLength), // Vertical
+    findWithSpacing(searchPattern, rowLength + 1) // Diagonal right
   )
 }
 
-private def findWithSpacing(start: Int, pattern: String, spacing: Int)(text: String) : Boolean = {
-
-  for ((letter, index) <- pattern.zipWithIndex) {
-    
-  }
-  false
+private def findWithSpacing(pattern: String, spacing: Int)(start: Int)(
+    text: String
+): Boolean = {
+  // print(text)
+  pattern.zipWithIndex.forall((letter, index) => {
+    val searchPos = index * spacing + start
+    searchPos < text.length && text.charAt(searchPos) == letter
+  })
 }
 
-def buildPattern(
-    pattern: String,
-    spacing: Int,
-    placeholder: String = "."
-): String =
-  val separator = s"${placeholder}{${spacing}}"
-  (pattern.head.toString) ++ "(?=" ++ separator ++ pattern.tail.toList.mkString(
-    separator
-  ) ++ ")"
+def day4b(input: String): Int = {
+  val rows = input.split("\n")
+  var result = 0
+  for (i <- Range(0, rows.length - 2)) {
+    for (j <- Range(0, rows.length - 2)) {
+      if (checkMainDiagonal(i, j)(rows) && checkOppositeDiagonal(i, j)(rows)) {
+        result += 1
+      }
+    }
+  }
+
+  result
+}
+
+def checkMainDiagonal(i: Int, j: Int)(rows: Array[String]): Boolean = {
+  (rows(i).charAt(j) == 'M' && rows(i + 1).charAt(j + 1) == 'A' && rows(i + 2)
+    .charAt(
+      j + 2
+    ) == 'S') || (rows(i)
+    .charAt(j) == 'S' && rows(i + 1).charAt(j + 1) == 'A' && rows(i + 2).charAt(
+    j + 2
+  ) == 'M')
+}
+
+def checkOppositeDiagonal(i: Int, j: Int)(rows: Array[String]): Boolean = {
+  (rows(i).charAt(j + 2) == 'M' && rows(i + 1).charAt(j + 1) == 'A' && rows(
+    i + 2
+  ).charAt(j) == 'S') || (rows(i).charAt(j + 2) == 'S' && rows(i + 1).charAt(
+    j + 1
+  ) == 'A' && rows(i + 2).charAt(j) == 'M')
+}
