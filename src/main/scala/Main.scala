@@ -5,6 +5,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import day3._
 import day4._
+import day5._
 
 @main def main(exercise: String, inputFile: String): Unit = {
   val input = Files.readString(Path.of(inputFile))
@@ -17,6 +18,8 @@ import day4._
     case "3b" => day3b(input)
     case "4a" => day4a(input)
     case "4b" => day4b(input)
+    case "5a" => day5a(input)
+    case "5b" => day5b(input)
     case _    => println("Unsupported")
   }
 
