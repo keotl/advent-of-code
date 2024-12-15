@@ -1,5 +1,7 @@
 package day5
 
+import scala.annotation.tailrec
+
 def day5a(input: String): Int = {
   val (rules :: updates :: _) = (input.split("\n\n").toList: @unchecked)
   val dependencies = buildAncestorsMap(rules.split("\n"))
@@ -20,7 +22,7 @@ def day5b(input: String): Int = {
     .split("\n")
     .map(_.split(",").map(_.toInt).toSeq)
     .filter(x => !validateUpdateOrder(dependencies)(x))
-    .map(reorderPages(dependencies))
+    .map(reorderPages(dependencies)(_, Seq.empty))
     .map(pages => pages(pages.length / 2))
     .sum()
 }
@@ -57,11 +59,11 @@ private def validateUpdateOrder(
   }
 }
 
-private def reorderPages(
+@tailrec private def reorderPages(
     dependencies: Map[Int, Set[Int]]
-)(incorrectOrder: Seq[Int]): Seq[Int] = {
+)(incorrectOrder: Seq[Int], acc: Seq[Int]): Seq[Int] = {
   if (incorrectOrder.isEmpty) {
-    return Seq.empty
+    return acc
   }
   val relevantDependencies = dependencies.view
     .mapValues(deps => deps.filter(incorrectOrder.contains(_)))
@@ -72,6 +74,7 @@ private def reorderPages(
       .get
 
   reorderPages(dependencies)(
-    incorrectOrder.filter(_ != next)
-  ) :+ next
+    incorrectOrder.filter(_ != next),
+    next +: acc
+  )
 }
