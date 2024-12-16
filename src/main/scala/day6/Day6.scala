@@ -19,7 +19,12 @@ def day6b(input: String): Int = {
 
   val guardState = createGuardPatrolState(obstacleMap, guardPos, "n")
 
-  findObstaclesToAdd(obstacleMap)(guardState, Set.empty).size
+  val possiblePositions = for (
+    i <- Range(0, obstacleMap.length); j <- Range(0, obstacleMap(0).length)
+  ) yield (i, j)
+
+  possiblePositions.filter(checkCausesCycles(obstacleMap, guardState)).length
+
 }
 
 private def parseObstacleMap(lines: Seq[String]): Array[Array[Boolean]] = {
@@ -147,40 +152,20 @@ private def isInACycle(
     .contains(state.heading)
 }
 
-@tailrec private def findObstaclesToAdd(
-    obstacles: Array[Array[Boolean]]
-)(state: GuardPatrolState, accumulator: Set[(Int, Int)]): Set[(Int, Int)] = {
-  val mapSize = (obstacles.length, obstacles(0).length)
-  val destination = nextTile(state.position, state.heading)
-
-  if (isOutOfBounds(mapSize)(destination)) {
-    return accumulator
+private def checkCausesCycles(
+    obstacles: Array[Array[Boolean]],
+    guard: GuardPatrolState
+)(pos: (Int, Int)): Boolean = {
+  if (obstacles(pos._1)(pos._2)) {
+    return false;
   }
-
-  if (obstacles(destination._1)(destination._2)) {
-    val nextState = state.copy(heading = rotate(state.heading))
-    return findObstaclesToAdd(obstacles)(nextState, accumulator)
-  }
-
-  if (accumulator.contains(destination)) {
-    val nextState = visit(destination)(state)
-    return findObstaclesToAdd(obstacles)(nextState, accumulator)
-  }
-
   try {
-    val altered = addObstacle(destination)(obstacles)
-    simulateGuardPatrol(altered)(state)
-    // Did not cause a cycle
-    return findObstaclesToAdd(obstacles)(
-      visit(destination)(state),
-      accumulator
-    )
+    val altered = addObstacle(pos)(obstacles)
+    simulateGuardPatrol(altered)(guard)
+    // No error thrown
+    false
   } catch {
-    case _ =>
-      return findObstaclesToAdd(obstacles)(
-        visit(destination)(state),
-        accumulator + destination
-      )
+    case _ => true
   }
 }
 
