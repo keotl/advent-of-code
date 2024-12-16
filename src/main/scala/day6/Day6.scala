@@ -13,6 +13,15 @@ def day6a(input: String): Int = {
   guardState.numberVisited
 }
 
+def day6b(input: String): Int = {
+  val obstacleMap = parseObstacleMap(input.split("\n"))
+  val guardPos = findGuardPosition(input.split("\n"))
+
+  val guardState = createGuardPatrolState(obstacleMap, guardPos, "n")
+
+  findObstaclesToAdd(obstacleMap)(guardState, Set.empty).size
+}
+
 private def parseObstacleMap(lines: Seq[String]): Array[Array[Boolean]] = {
   lines
     .map(_.map(_ == '#').toArray)
@@ -36,7 +45,7 @@ private def findGuardPosition(lines: Seq[String]): (Int, Int) = {
 type Heading = "n" | "e" | "s" | "w"
 
 private case class GuardPatrolState(
-    visited: Array[Array[Boolean]],
+    visited: Array[Array[Set[Heading]]],
     numberVisited: Int,
     position: (Int, Int),
     heading: Heading
@@ -48,10 +57,12 @@ private case class GuardPatrolState(
   val mapSize = (obstacles.length, obstacles(0).length)
   val destination = nextTile(state.position, state.heading)
 
-  // println(s"${state.position},${state.heading} -> ${destination}")
-
   if (isOutOfBounds(mapSize)(destination)) {
     return state
+  }
+
+  if (isInACycle(destination, state)) {
+    throw new Error("inside a cycle")
   }
 
   if (obstacles(destination._1)(destination._2)) {
@@ -90,18 +101,20 @@ private def rotate(heading: Heading): Heading = {
 private def visit(
     tile: (Int, Int)
 )(state: GuardPatrolState): GuardPatrolState = {
-  val alreadyVisited = state.visited(tile._1)(tile._2)
-  if (alreadyVisited) {
-    state.copy(position = tile)
-  } else {
-    val updatedRow = state.visited(tile._1).updated(tile._2, true)
-    val updatedVisited = state.visited.updated(tile._1, updatedRow)
-    state.copy(
-      visited = updatedVisited,
-      numberVisited = state.numberVisited + 1,
-      position = tile
-    )
-  }
+  val alreadyVisited = state.visited(tile._1)(tile._2).size > 0
+
+  val updatedVisitedTileHeadings =
+    state.visited(tile._1)(tile._2) + state.heading
+  val updatedRow =
+    state.visited(tile._1).updated(tile._2, updatedVisitedTileHeadings)
+  val updatedVisited = state.visited.updated(tile._1, updatedRow)
+
+  state.copy(
+    visited = updatedVisited,
+    numberVisited =
+      if (alreadyVisited) then state.numberVisited else state.numberVisited + 1,
+    position = tile
+  )
 }
 
 private def createGuardPatrolState[T](
@@ -113,7 +126,9 @@ private def createGuardPatrolState[T](
     visited = Range(0, obstacles.length)
       .map(i =>
         Range(0, obstacles(0).length)
-          .map(j => (i, j) == position)
+          .map(j =>
+            if ((i, j) == position) then Set(heading) else Set.empty[Heading]
+          )
           .toArray
       )
       .toArray,
@@ -121,4 +136,57 @@ private def createGuardPatrolState[T](
     position = position,
     heading = heading
   )
+}
+
+private def isInACycle(
+    destination: (Int, Int),
+    state: GuardPatrolState
+): Boolean = {
+  state
+    .visited(destination._1)(destination._2)
+    .contains(state.heading)
+}
+
+@tailrec private def findObstaclesToAdd(
+    obstacles: Array[Array[Boolean]]
+)(state: GuardPatrolState, accumulator: Set[(Int, Int)]): Set[(Int, Int)] = {
+  val mapSize = (obstacles.length, obstacles(0).length)
+  val destination = nextTile(state.position, state.heading)
+
+  if (isOutOfBounds(mapSize)(destination)) {
+    return accumulator
+  }
+
+  if (obstacles(destination._1)(destination._2)) {
+    val nextState = state.copy(heading = rotate(state.heading))
+    return findObstaclesToAdd(obstacles)(nextState, accumulator)
+  }
+
+  if (accumulator.contains(destination)) {
+    val nextState = visit(destination)(state)
+    return findObstaclesToAdd(obstacles)(nextState, accumulator)
+  }
+
+  try {
+    val altered = addObstacle(destination)(obstacles)
+    simulateGuardPatrol(altered)(state)
+    // Did not cause a cycle
+    return findObstaclesToAdd(obstacles)(
+      visit(destination)(state),
+      accumulator
+    )
+  } catch {
+    case _ =>
+      return findObstaclesToAdd(obstacles)(
+        visit(destination)(state),
+        accumulator + destination
+      )
+  }
+}
+
+private def addObstacle(
+    position: (Int, Int)
+)(obstacles: Array[Array[Boolean]]): Array[Array[Boolean]] = {
+  val updatedRow = obstacles(position._1).updated(position._2, true)
+  obstacles.updated(position._1, updatedRow)
 }

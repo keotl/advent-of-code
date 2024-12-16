@@ -22,6 +22,7 @@ import day6._
     case "5a" => day5a(input)
     case "5b" => day5b(input)
     case "6a" => day6a(input)
+    case "6b" => day6b(input)
     case _    => println("Unsupported")
   }
 
