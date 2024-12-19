@@ -10,6 +10,7 @@ import day6._
 import day7._
 import day8._
 import day9._
+import day10._
 
 @main def main(exercise: String, inputFile: String): Unit = {
   val input = Files.readString(Path.of(inputFile))
@@ -32,6 +33,8 @@ import day9._
     case "8b" => day8b(input)
     case "9a" => day9a(input)
     case "9b" => day9b(input)
+    case "10a" => day10a(input)
+    case "10b" => day10b(input)
     case _    => println("Unsupported")
   }
 
