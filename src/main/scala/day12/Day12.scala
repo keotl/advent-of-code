@@ -11,6 +11,15 @@ def day12a(input: String): Long = {
     .sum
 }
 
+def day12b(input: String): Long = {
+  val map = parseMap(input)
+  val regions = computeContiguousRegions(map)
+  // println(map.map(_.toSeq).mkString("\n"))
+  regions
+    .map(calculateCostContinuousSides)
+    .sum
+}
+
 private def parseMap(input: String): Array[Array[Char]] = {
   val rows = input.split("\n")
 
@@ -87,4 +96,68 @@ private def calculateCost(region: Region): Int = {
   val perimeter = region.points.toSeq.map(perimeterUnitCost).sum
 
   return area * perimeter
+}
+
+private def calculateCostContinuousSides(region: Region): Int = {
+  val area = region.points.size
+  val corners = countCorners(region)
+
+  return area * corners
+}
+
+private def countCorners(region: Region): Int = {
+  val corners = region.points
+    .flatMap(findCorners(region))
+    .toSet
+
+  corners.size
+}
+
+private def findCorners(region: Region)(tile: (Int, Int)): Set[(Int, Int)] = {
+  val (i, j) = tile
+  val candidates = Seq((i, j), (i + 1, j), (i, j + 1), (i + 1, j + 1))
+
+  var result: Set[(Int, Int)] = Set()
+
+  for (candidate <- candidates) {
+    isCorner(region)(candidate._1, candidate._2) match {
+      case 1 => result = result + candidate
+      case 2 =>
+        result = result + candidate + ((
+          candidate._1 * 1000000, // Janky way to count a corner twice when it is a diagonal inside region
+          candidate._2 * 1000000
+        ))
+      case _ => ()
+    }
+  }
+
+  result
+}
+
+// Convention: corner (i,j) is top-left of tile (i,j)
+private def isCorner(region: Region)(i: Int, j: Int): Int = {
+  val up = region.points.contains((i - 1, j))
+
+  val insideNeighbours = Seq((i - 1, j - 1), (i - 1, j), (i, j - 1), (i, j))
+    .filter(region.points.contains)
+
+  if (insideNeighbours.length % 4 == 0) {
+    return 0
+  }
+
+  if (insideNeighbours.length % 2 == 1) {
+    return 1
+  }
+
+  val a = insideNeighbours(0)
+  val b = insideNeighbours(1)
+
+  val di = b._1 - a._1
+  val dj = b._2 - a._2
+  if (di == 0 || dj == 0) {
+    // 2 adjacent, does not yield corner
+    return 0
+  }
+
+  2
 }
